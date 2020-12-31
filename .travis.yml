@@ -1,0 +1,31 @@
+
+language: generic
+sudo: required  # 管理者権限を指
+
+# まず TravisCI に Docker をインストール
+services:
+  - docker
+
+# テスト用のコンテナをビルド
+before_install:
+  - docker build -t iskroom/react-test -f ./client/Dockerfile.dev ./client
+
+# テスト実行
+# TravisCIはコマンド実行結果の Status Code が 0 以外だった場合は失敗と判断する
+# TravisCIは script が終了したら自動で exit するように期待しているので -e を入れておく
+script:
+  - docker run -e CI=true iskroom/react-test npm run test
+
+after_success:
+  # 1. 上記テストをパスしたらprod用のコンテナをビルド
+  - docker build -t iskroom/multi-docker-client ./client
+  - docker build -t iskroom/multi-docker-nginx ./nginx
+  - docker build -t iskroom/multi-docker-server ./server
+  - docker build -t iskroom/multi-docker-worker ./worker
+  # 2. Dockerhubにログイン(TraviCIに登録した環境変数を使用)
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # 3. ビルドしたImageをDockerhubにpush
+  - docker push iskroom/multi-docker-client
+  - docker push iskroom/multi-docker-nginx
+  - docker push iskroom/multi-docker-server
+  - docker push iskroom/multi-docker-worker
