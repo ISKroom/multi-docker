@@ -1,4 +1,3 @@
-
 language: generic
 sudo: required  # 管理者権限を指
 
