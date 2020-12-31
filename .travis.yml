@@ -23,7 +23,7 @@ after_success:
   - docker build -t iskroom/multi-docker-server ./server
   - docker build -t iskroom/multi-docker-worker ./worker
   # 2. Dockerhubにログイン(TraviCIに登録した環境変数を使用)
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   # 3. ビルドしたImageをDockerhubにpush
   - docker push iskroom/multi-docker-client
   - docker push iskroom/multi-docker-nginx
