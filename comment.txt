@@ -1,12 +1,6 @@
 〇 keys.js
-→ @dev: 環境変数は docker-compose.yml に記載された値を使用している
-
-〇 環境変数
-・docker-compose.yml → dev用の環境変数を直接記入 → keys.js で使用
-・.travis.yml → travisCI.com に環境変数を登録 → git push時に使用
-・AWSのElastic Beanstalkインスタンスに環境変数を登録（RDSとElastiCacheに接続するため）（EBインスタンス内のコンテナは全てこの環境変数にアクセスできる）
-
-〇
+→ @dev:  環境変数は docker-compose.yml に記載された値を使用している
+→ @prod: 環境変数は Elastic Beanstalkインスタンスに登録された値を使用している（EBインスタンス内のコンテナは全てこの環境変数にアクセスできる）
 
 〇 client\nginx\default.conf
 ---
@@ -40,6 +34,7 @@ location /sockjs-node {
 ---
 
 〇 .travis.yml
+環境変数はtravisCI.com に登録された値を使用
 ---
 after_success:
   # tagは<DockerHubID>/<ImageName>でなければならない
@@ -60,7 +55,8 @@ Dockerrun.aws.json ではコンテナ間の通信をLinkで明示しなければ
         "name": "client", # AWSダッシュボード上で表示される名前
         "image": "iskoroom/multi-docker-client", # DockerHub上のイメージ名
         "hostname": "client",  # docker-compose.ymlにおけるservice名と同じにする。こうすることでコンテナへのアクセスに"client"を使用することができる。(http://clientのように)
-        "essential": false # trueの場合このコンテナがstopしたらその他のコンテナも全てstopする（Dockerrun.aws.jsonに記述したコンテナの内少なくとも一つはtrueでなければならない）
+        "essential": false, # trueの場合このコンテナがstopしたらその他のコンテナも全てstopする（Dockerrun.aws.jsonに記述したコンテナの内少なくとも一つはtrueでなければならない）
+        "memory": 128 # コンテナに割り当てるRAM。とりあえず128でよい（テキトー）。
       },
       {
         "name": "server",
