@@ -1,4 +1,14 @@
-client\nginx\default.conf
+〇 keys.js
+→ @dev: 環境変数は docker-compose.yml に記載された値を使用している
+
+〇 環境変数
+・docker-compose.yml → dev用の環境変数を直接記入 → keys.js で使用
+・.travis.yml → travisCI.com に環境変数を登録 → git push時に使用
+・AWSのElastic Beanstalkインスタンスに環境変数を登録（RDSとElastiCacheに接続するため）（EBインスタンス内のコンテナは全てこの環境変数にアクセスできる）
+
+〇
+
+〇 client\nginx\default.conf
 ---
 server {
   listen 3000;
@@ -11,14 +21,14 @@ server {
 }
 ---
 
-client\Dockerfile
+〇 client\Dockerfile
 ---
 # 以下はnginxコンテナのデフォルトで存在するdefault.confを上書きしている
 COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
 ---
 
 
-nginx\default.conf
+〇 nginx\default.conf
 ---
 # 以下はdev環境でのみ必要
 location /sockjs-node {
@@ -28,3 +38,48 @@ location /sockjs-node {
   proxy_set_header Connection "Upgrade";
 }
 ---
+
+〇 .travis.yml
+---
+after_success:
+  # tagは<DockerHubID>/<ImageName>でなければならない
+  - docker build -t iskoroom/multi-docker-client ./client
+---
+
+〇 Dockerrun.aws.json
+・docker-compose では自動でコンテナ間の通信を可能にしたが、
+Dockerrun.aws.json ではコンテナ間の通信をLinkで明示しなければならない（nginxのところ）（hostnameではなくnameでLinkを指定することに注意！serverコンテナはapiではなくserverを使用！）
+・json validator でタイポチェック！
+---
+  {
+    # バージョンは 2
+    "AWSEBDockerrunVersion": 2,
+    # 作成するコンテナの情報を記述
+    "containerDefinitions": [
+      {
+        "name": "client", # AWSダッシュボード上で表示される名前
+        "image": "iskoroom/multi-docker-client", # DockerHub上のイメージ名
+        "hostname": "client",  # docker-compose.ymlにおけるservice名と同じにする。こうすることでコンテナへのアクセスに"client"を使用することができる。(http://clientのように)
+        "essential": false # trueの場合このコンテナがstopしたらその他のコンテナも全てstopする（Dockerrun.aws.jsonに記述したコンテナの内少なくとも一つはtrueでなければならない）
+      },
+      {
+        "name": "server",
+        "image": "iskoroom/multi-docker-server",
+        "hostname": "api",  # docker-compose.yml でコンテナ名をapiにしたことに注意！
+        "essential": false
+      },
+      {
+        "name": "nginx",
+        "image": "iskoroom/multi-docker-nginx",
+        "hostname": "nginx",
+        "essential": true,
+        "portMappings": [
+          {
+            "hostPort": 80,
+            "containerPort": 80
+          }
+        ],
+        "Links": ["client", "server"]
+      },
+    ]
+  }

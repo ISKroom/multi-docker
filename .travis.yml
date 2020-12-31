@@ -29,3 +29,15 @@ after_success:
   - docker push iskoroom/multi-docker-nginx
   - docker push iskoroom/multi-docker-server
   - docker push iskoroom/multi-docker-worker
+
+deploy:
+  provider: elasticbeanstalk  # TravisCI が自動で AWS Elastic Beanstalk にリーチしてくれる
+  region: "us-east-2"         # Elastic Beanstalk を作成した Region を指定
+  app: "multi-docker"         # アプリケーション名
+  env: "MultiDocker-env"      # Elastic Beanstalk の環境名
+  bucket_name: "elasticbeanstalk-us-east-2-288341566704" # Elastic Beanstalk を作成したときに同時に作成された S3 の名前(同じRegionなら何でも良い？)
+  bucket_path: "docker-multi" # 最初はデプロイするまで存在しないフォルダだけど、基本的にアプリケーション名と同じで良い
+  on:
+    branch: master            # master ブランチに push があったときのみデプロイする
+  access_key_id: "$AWS_ACCESS_KEY"      # IAMで作成したユーザーに割り当てられたアクセスキー
+  secret_access_key: "$AWS_SECRET_KEY"  # IAMで作成したユーザーに割り当てられたシークレットアクセスキー
